@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TunerAid - Standalone ECU Calculator & Tuning Suite</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        iosBg: '#0b0f19',
+                        iosCard: '#131c2e',
+                        iosCardBorder: 'rgba(255, 255, 255, 0.08)',
+                        iosBlue: '#0A84FF',
+                        iosGreen: '#32D74B',
+                        iosOrange: '#FF9F0A',
+                        iosRed: '#FF453A',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    <!-- PWA Meta Tags for iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TunerAid">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%230b0f19'/><path d='M110 180h80v152h-80zM220 180h60l40 80 40-80h60v152h-50v-74l-35 74h-30l-35-74v74h-50z' fill='%230A84FF'/></svg>">
+    
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        .font-mono-num {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* iOS Glassmorphism Card */
+        .ios-glass {
+            background: rgba(19, 28, 46, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .ios-glass-sub {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-iosBg text-gray-100 min-h-screen flex flex-col justify-between selection:bg-iosBlue selection:text-white">
+
+    <!-- Top Header with Brand Logo & Language Switcher -->
+    <header class="sticky top-0 z-40 ios-glass border-b border-iosCardBorder px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <!-- Exact Vector Logo (Tune Wizard by Amer Hbahbeh) -->
+            <div class="flex items-center bg-black/40 px-2.5 py-1.5 rounded-xl border border-iosBlue/30 shadow-inner">
+                <svg class="h-6 w-auto" viewBox="0 0 650 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 25H65V45H50V115H35V45H25V25Z" fill="#FFFFFF"/>
+                    <path d="M75 25H115V45H100V115H85V45H75V25Z" fill="#FFFFFF"/>
+                    <path d="M125 25H165V45H145V65H160V85H145V115H125V25Z" fill="#FFFFFF"/>
+                    <path d="M175 25H215V45H195V65H210V85H195V115H175V25Z" fill="#FFFFFF"/>
+                    
+                    <path d="M235 25H275V45H255V100H275V115H235V25Z" fill="#0A84FF"/>
+                    <path d="M285 25H325V45H305V65H325V85H305V115H285V25Z" fill="#0A84FF"/>
+                    <path d="M335 25H355V115H335V25Z" fill="#0A84FF"/>
+                    <path d="M365 25H405V45H385V65H400V85H385V115H365V25Z" fill="#0A84FF"/>
+                    <path d="M415 25H455V45H435V100H455V115H415V25Z" fill="#0A84FF"/>
+                    
+                    <line x1="75" y1="125" x2="455" y2="125" stroke="#0A84FF" stroke-width="3" stroke-linecap="round"/>
+                    
+                    <text x="25" y="138" fill="#9CA3AF" font-family="'Orbitron', sans-serif" font-size="12" font-weight="600" letter-spacing="2">BY AMER HBAHBEH</text>
+                </svg>
+            </div>
+            <div class="border-r border-gray-700 pr-3">
+                <h1 class="text-xs font-bold tracking-wider text-iosBlue uppercase font-mono-num">TunerAid</h1>
+                <p class="text-[10px] text-gray-400" id="header-subtitle">محترف الستاند ألون</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 space-x-reverse">
+            <!-- Language Toggle Button -->
+            <button onclick="toggleLanguage()" class="ios-glass-sub px-3 py-1.5 rounded-full text-xs font-bold text-iosBlue hover:bg-iosBlue/20 transition flex items-center space-x-1 space-x-reverse">
+                <i class="fa-solid fa-globe"></i>
+                <span id="lang-btn-text">EN</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="flex-1 max-w-2xl w-full mx-auto p-4 pb-36">
+        
+        <!-- ================= SECTION 1: AFR & LAMBDA ================= -->
+        <div id="section-afr" class="space-y-4">
+            <div class="ios-glass p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2 space-x-reverse">
+                        <i class="fa-solid fa-gauge-high text-iosBlue"></i>
+                        <span data-i18n="afr_title">حاسبة AFR واللامدا (Lambda & AFR)</span>
+                    </h2>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-iosBlue/20 text-iosBlue font-mono-num" id="fuel-type-badge">Gasoline</span>
+                </div>
+
+                <!-- Fuel Type Selector -->
+                <div class="mb-4">
+                    <label class="text-xs text-gray-400 block mb-1.5" data-i18n="select_fuel">نوع الوقود الأساسي:</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setFuel('gasoline', 14.7)" class="fuel-btn px-2 py-2 rounded-xl text-xs font-semibold bg-iosBlue text-white transition shadow-md" data-fuel="gasoline">بنزين 14.7</button>
+                        <button onclick="setFuel('e85', 9.76)" class="fuel-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition" data-fuel="e85">E85 (9.8)</button>
+                        <button onclick="setFuel('methanol', 6.45)" class="fuel-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition" data-fuel="methanol">ميثانول</button>
+                        <button onclick="setFuel('diesel', 14.5)" class="fuel-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition" data-fuel="diesel">ديزل</button>
+                    </div>
+                </div>
+
+                <!-- Lambda Slider -->
+                <div class="space-y-2 mb-5">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400" data-i18n="target_lambda">قيمة اللامدا المستهدفة (Lambda):</span>
+                        <span id="lambda-val" class="font-mono-num font-bold text-iosBlue text-lg">0.85</span>
+                    </div>
+                    <input type="range" id="lambda-slider" min="0.65" max="1.30" step="0.01" value="0.85" 
+                           oninput="updateAfrFromLambda(this.value)"
+                           class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-iosBlue">
+                    <div class="flex justify-between text-[10px] text-gray-500 font-mono-num">
+                        <span>Rich (0.65)</span>
+                        <span>Stoich (1.00)</span>
+                        <span>Lean (1.30)</span>
+                    </div>
+                </div>
+
+                <!-- Results Display Grid -->
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-800">
+                    <div class="ios-glass-sub p-3.5 rounded-xl text-center">
+                        <span class="text-xs text-gray-400 block mb-1" data-i18n="calculated_afr">الـ AFR المحسوب</span>
+                        <span id="res-afr" class="font-mono-num text-2xl font-black text-iosGreen">12.50</span>
+                    </div>
+                    <div class="ios-glass-sub p-3.5 rounded-xl text-center">
+                        <span class="text-xs text-gray-400 block mb-1" data-i18n="engine_state">حالة الاحتراق والبوست</span>
+                        <span id="res-status" class="text-xs font-bold text-iosOrange mt-1.5 block">احتراق توربو آمن (Boost)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 2: ENGINES & LIMITS ================= -->
+        <div id="section-engines" class="space-y-4 hidden">
+            <div class="ios-glass p-5 rounded-2xl shadow-xl">
+                <h2 class="text-base font-bold text-white mb-3 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-engine text-iosBlue"></i>
+                    <span data-i18n="engines_title">دليل محركات التعديل والستاند ألون</span>
+                </h2>
+                
+                <!-- Engine Search -->
+                <div class="mb-4">
+                    <input type="text" id="engine-search" oninput="filterEngines(this.value)" placeholder="ابحث عن اسم المحرك (مثل 2JZ, LS3, RB26)..." 
+                           class="w-full ios-glass-sub px-4 py-2.5 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-iosBlue transition">
+                </div>
+
+                <!-- Engines Container -->
+                <div id="engines-list" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    <!-- Javascript will inject engine cards here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 3: HORSEPOWER & PARTS CALCULATOR ================= -->
+        <div id="section-calculator" class="space-y-4 hidden">
+            <div class="ios-glass p-5 rounded-2xl shadow-xl">
+                <h2 class="text-base font-bold text-white mb-3 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-bolt text-iosBlue"></i>
+                    <span data-i18n="calc_title">حاسبة الأحصنة والعزم (تعديل الـ Standalone)</span>
+                </h2>
+
+                <!-- Select Engine Base -->
+                <div class="mb-4">
+                    <label class="text-xs text-gray-400 block mb-1.5" data-i18n="select_base_engine">اختر المحرك الأساسي:</label>
+                    <select id="calc-engine-select" onchange="calculateHp()" class="w-full ios-glass-sub px-3.5 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-iosBlue">
+                        <option value="2jz">Toyota 2JZ-GTE (3.0L Turbo)</option>
+                        <option value="rb26">Nissan RB26DETT (2.6L Twin Turbo)</option>
+                        <option value="ls3">GM LS3 V8 (6.2L NA / Supercharged)</option>
+                        <option value="ej25">Subaru EJ257 (2.5L Turbo)</option>
+                        <option value="k24">Honda K24/K20 (2.4L VTEC Turbo)</option>
+                        <option value="4g63">Mitsubishi 4G63T (2.0L Evo)</option>
+                        <option value="b58">BMW B58 (3.0L Single Turbo)</option>
+                    </select>
+                </div>
+
+                <!-- Boost Pressure Slider & Input -->
+                <div class="mb-4 ios-glass-sub p-3.5 rounded-xl space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-iosBlue" data-i18n="boost_pressure_label">مقدار ضغط البوست (Boost Pressure):</label>
+                        <div class="flex items-center space-x-1 space-x-reverse">
+                            <input type="number" id="boost-num-input" value="1.5" step="0.1" min="0" max="3.5" oninput="updateBoostFromNum(this.value)" 
+                                   class="w-16 bg-black/40 text-center text-white text-sm font-mono-num rounded-lg py-1 border border-gray-700 focus:outline-none focus:border-iosBlue">
+                            <span id="boost-unit-label" class="text-xs text-gray-400 font-bold">Bar (~21.8 PSI)</span>
+                        </div>
+                    </div>
+                    <input type="range" id="boost-slider" min="0" max="35" step="1" value="22" 
+                           oninput="updateBoostFromSlider(this.value)"
+                           class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-iosBlue">
+                </div>
+
+                <!-- Drivetrain Loss Type -->
+                <div class="mb-4">
+                    <label class="text-xs text-gray-400 block mb-1.5" data-i18n="drivetrain_type">نوع نظام الدفع (ضياع العزم):</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setDrivetrain('rwd', 15)" class="dt-btn px-2 py-2 rounded-xl text-xs font-semibold bg-iosBlue text-white transition" data-dt="rwd">دفع خلفي RWD (15%)</button>
+                        <button onclick="setDrivetrain('fwd', 12)" class="dt-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition" data-dt="fwd">دفع أمامي FWD (12%)</button>
+                        <button onclick="setDrivetrain('awd', 20)" class="dt-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition" data-dt="awd">دفع رباعي AWD (20%)</button>
+                    </div>
+                </div>
+
+                <!-- Upgrades Checkboxes -->
+                <div class="mb-4">
+                    <label class="text-xs text-gray-400 block mb-2 font-bold text-gray-300" data-i18n="tuning_parts_label">اختر قطع التعديل والمحرك المثبتة:</label>
+                    <div id="parts-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Dynamic Checkboxes will be injected here -->
+                    </div>
+                </div>
+
+                <!-- HP Output Card -->
+                <div class="ios-glass-sub p-4 rounded-xl border border-iosBlue/30 relative overflow-hidden">
+                    <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-iosBlue/10 rounded-full blur-xl pointer-events-none"></div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <span class="text-[11px] text-gray-400 block mb-1" data-i18n="crank_hp">حصان الكرنك (Crank HP)</span>
+                            <span id="res-crank-hp" class="font-mono-num text-2xl font-black text-white">---</span>
+                        </div>
+                        <div>
+                            <span class="text-[11px] text-gray-400 block mb-1" data-i18n="wheel_hp">حصان العجل الحقيقي (WHP)</span>
+                            <span id="res-wheel-hp" class="font-mono-num text-3xl font-black text-iosGreen">---</span>
+                        </div>
+                    </div>
+                    <!-- Safety / Warning Banner -->
+                    <div id="engine-safety-alert" class="mt-3 pt-3 border-t border-gray-800 text-center text-xs font-semibold text-iosOrange">
+                        <i class="fa-solid fa-triangle-exclamation ml-1"></i> ضمن الحدود الآمنة للبساتن الأصلية
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 4: PRESSURE CONVERTER ================= -->
+        <div id="section-converter" class="space-y-4 hidden">
+            <div class="ios-glass p-5 rounded-2xl shadow-xl">
+                <h2 class="text-base font-bold text-white mb-4 flex items-center space-x-2 space-x-reverse">
+                    <i class="fa-solid fa-arrows-rotate text-iosBlue"></i>
+                    <span data-i18n="conv_title">محول ضغط التوربو (PSI & Bar & kPa)</span>
+                </h2>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1" data-i18n="psi_val">القيمة بالـ PSI:</label>
+                        <input type="number" id="conv-psi" placeholder="أدخل PSI..." oninput="convertFrom('psi', this.value)"
+                               class="w-full ios-glass-sub px-4 py-2.5 rounded-xl text-sm font-mono-num text-white focus:outline-none focus:border-iosBlue">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1" data-i18n="bar_val">القيمة بالـ Bar:</label>
+                        <input type="number" id="conv-bar" placeholder="أدخل Bar..." oninput="convertFrom('bar', this.value)"
+                               class="w-full ios-glass-sub px-4 py-2.5 rounded-xl text-sm font-mono-num text-white focus:outline-none focus:border-iosBlue">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1" data-i18n="kpa_val">القيمة بالـ kPa:</label>
+                        <input type="number" id="conv-kpa" placeholder="أدخل kPa..." oninput="convertFrom('kpa', this.value)"
+                               class="w-full ios-glass-sub px-4 py-2.5 rounded-xl text-sm font-mono-num text-white focus:outline-none focus:border-iosBlue">
+                    </div>
+                </div>
+
+                <!-- Quick Reference Table -->
+                <div class="mt-5 pt-4 border-t border-gray-800">
+                    <h3 class="text-xs font-bold text-gray-300 mb-2" data-i18n="ref_table">جدول مرجعي سريع لضغط التوربو:</h3>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono-num">
+                        <div class="ios-glass-sub p-2 rounded-lg">
+                            <span class="text-gray-500 block text-[10px]">Stock Low</span>
+                            <span class="text-white font-bold">0.5 Bar / 7 PSI</span>
+                        </div>
+                        <div class="ios-glass-sub p-2 rounded-lg">
+                            <span class="text-gray-500 block text-[10px]">Moderate Boost</span>
+                            <span class="text-iosOrange font-bold">1.0 Bar / 14.5 PSI</span>
+                        </div>
+                        <div class="ios-glass-sub p-2 rounded-lg">
+                            <span class="text-gray-500 block text-[10px]">High Boost Race</span>
+                            <span class="text-iosGreen font-bold">1.5 Bar / 21.8 PSI</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- iOS Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 ios-glass border-t border-iosCardBorder pb-6 pt-2 px-3">
+        <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+            <button onclick="switchTab('afr')" id="nav-btn-afr" class="nav-tab flex flex-col items-center justify-center py-1.5 text-iosBlue transition">
+                <i class="fa-solid fa-gauge-high text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold" data-i18n="tab_afr">AFR/لامدا</span>
+            </button>
+            <button onclick="switchTab('engines')" id="nav-btn-engines" class="nav-tab flex flex-col items-center justify-center py-1.5 text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-engine text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold" data-i18n="tab_engines">المحركات</span>
+            </button>
+            <button onclick="switchTab('calculator')" id="nav-btn-calculator" class="nav-tab flex flex-col items-center justify-center py-1.5 text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-bolt text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold" data-i18n="tab_calc">الحاسبة</span>
+            </button>
+            <button onclick="switchTab('converter')" id="nav-btn-converter" class="nav-tab flex flex-col items-center justify-center py-1.5 text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-arrows-rotate text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold" data-i18n="tab_conv">الضغط</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- TRANSLATIONS DICTIONARY ---
+        const translations = {
+            ar: {
+                subtitle: "محترف الستاند ألون",
+                afr_title: "حاسبة AFR واللامدا (Lambda & AFR)",
+                select_fuel: "نوع الوقود الأساسي:",
+                target_lambda: "قيمة اللامدا المستهدفة (Lambda):",
+                calculated_afr: "الـ AFR المحسوب",
+                engine_state: "حالة الاحتراق والبوست",
+                engines_title: "دليل محركات التعديل والستاند ألون",
+                search_engine_placeholder: "ابحث عن اسم المحرك (مثل 2JZ, LS3, RB26)...",
+                calc_title: "حاسبة الأحصنة والعزم (تعديل الـ Standalone)",
+                select_base_engine: "اختر المحرك الأساسي:",
+                boost_pressure_label: "مقدار ضغط البوست (Boost Pressure):",
+                drivetrain_type: "نوع نظام الدفع (ضياع العزم):",
+                tuning_parts_label: "اختر قطع التعديل والمحرك المثبتة:",
+                crank_hp: "حصان الكرنك (Crank HP)",
+                wheel_hp: "حصان العجل الحقيقي (WHP)",
+                safe_limit: "ضمن الحدود الآمنة للبساتن الأصلية",
+                warning_limit: "تنبيه: أعلى من تحمل البساتن الأصلية (تحتاج باسات وكونرود فورجد)",
+                conv_title: "محول ضغط التوربو (PSI & Bar & kPa)",
+                psi_val: "القيمة بالـ PSI:",
+                bar_val: "القيمة بالـ Bar:",
+                kpa_val: "القيمة بالـ kPa:",
+                ref_table: "جدول مرجعي سريع لضغط التوربو:",
+                tab_afr: "AFR/لامدا",
+                tab_engines: "المحركات",
+                tab_calc: "الحاسبة",
+                tab_conv: "الضغط",
+                rwd_btn: "دفع خلفي RWD (15%)",
+                fwd_btn: "دفع أمامي FWD (12%)",
+                awd_btn: "دفع رباعي AWD (20%)",
+                stock_block: "تحمل البلوك الأساسي:",
+                timing_recom: "التايمنج الموصى به عند أقصى بوست:",
+                cc_unit: "سي سي"
+            },
+            en: {
+                subtitle: "Standalone Tuning Suite",
+                afr_title: "Lambda & AFR Calculator",
+                select_fuel: "Base Fuel Type:",
+                target_lambda: "Target Lambda Value:",
+                calculated_afr: "Calculated AFR",
+                engine_state: "Combustion & Boost State",
+                engines_title: "Standalone Tuning Engine Guide",
+                search_engine_placeholder: "Search engine (e.g. 2JZ, LS3, RB26)...",
+                calc_title: "Horsepower & Torque Calculator (Standalone)",
+                select_base_engine: "Select Base Engine:",
+                boost_pressure_label: "Boost Pressure Level:",
+                drivetrain_type: "Drivetrain Type (Transmission Loss):",
+                tuning_parts_label: "Select Installed Tuning Parts:",
+                crank_hp: "Crank HP",
+                wheel_hp: "Wheel HP (WHP)",
+                safe_limit: "Within safe limits for stock pistons",
+                warning_limit: "Warning: Exceeds stock piston limits (Forged internals required)",
+                conv_title: "Turbo Pressure Converter (PSI & Bar & kPa)",
+                psi_val: "Value in PSI:",
+                bar_val: "Value in Bar:",
+                kpa_val: "Value in kPa:",
+                ref_table: "Quick Turbo Pressure Reference Table:",
+                tab_afr: "AFR/Lambda",
+                tab_engines: "Engines",
+                tab_calc: "Calculator",
+                tab_conv: "Pressure",
+                rwd_btn: "RWD (15% Loss)",
+                fwd_btn: "FWD (12% Loss)",
+                awd_btn: "AWD (20% Loss)",
+                stock_block: "Stock Block Limit:",
+                timing_recom: "Recommended Timing @ Max Boost:",
+                cc_unit: "cc"
+            }
+        };
+
+        let currentLang = 'ar';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.setAttribute('lang', currentLang);
+            document.getElementById('lang-btn-text').innerText = currentLang === 'ar' ? 'EN' : 'AR';
+            
+            // Translate static elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+
+            document.getElementById('engine-search').placeholder = translations[currentLang].search_engine_placeholder;
+            
+            // Re-render dynamic lists
+            renderEngines();
+            renderParts();
+            calculateHp();
+            updateAfrFromLambda(document.getElementById('lambda-slider').value);
+        }
+
+        // --- SECTION 1: AFR LOGIC ---
+        let baseStoich = 14.7;
+        let currentFuelName = 'gasoline';
+
+        function setFuel(fuelKey, stoichVal) {
+            baseStoich = stoichVal;
+            currentFuelName = fuelKey;
+            
+            document.querySelectorAll('.fuel-btn').forEach(btn => {
+                if(btn.getAttribute('data-fuel') === fuelKey) {
+                    btn.className = "fuel-btn px-2 py-2 rounded-xl text-xs font-semibold bg-iosBlue text-white transition shadow-md";
+                } else {
+                    btn.className = "fuel-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition";
+                }
+            });
+
+            document.getElementById('fuel-type-badge').innerText = fuelKey.toUpperCase();
+            updateAfrFromLambda(document.getElementById('lambda-slider').value);
+        }
+
+        function updateAfrFromLambda(val) {
+            const lambda = parseFloat(val);
+            document.getElementById('lambda-val').innerText = lambda.toFixed(2);
+            
+            const afr = (lambda * baseStoich).toFixed(2);
+            document.getElementById('res-afr').innerText = afr;
+
+            const statusEl = document.getElementById('res-status');
+            if (lambda > 1.02) {
+                statusEl.innerText = currentLang === 'ar' ? 'وقود اقتصادي / كروز (Lean)' : 'Economical / Cruise (Lean)';
+                statusEl.className = "text-xs font-bold text-yellow-400 mt-1.5 block";
+            } else if (lambda >= 0.98 && lambda <= 1.02) {
+                statusEl.innerText = currentLang === 'ar' ? 'احتراق مثالي Stoichiometric' : 'Stoichiometric Combustion';
+                statusEl.className = "text-xs font-bold text-iosGreen mt-1.5 block";
+            } else if (lambda >= 0.82) {
+                statusEl.innerText = currentLang === 'ar' ? 'قدرة عالية طبيعية (NA Power)' : 'Naturally Aspirated Power';
+                statusEl.className = "text-xs font-bold text-iosBlue mt-1.5 block";
+            } else {
+                statusEl.innerText = currentLang === 'ar' ? 'احتراق توربو آمن تحت البوست (Rich Boost)' : 'Safe Turbo Boost Combustion';
+                statusEl.className = "text-xs font-bold text-iosOrange mt-1.5 block";
+            }
+        }
+
+        // --- SECTION 2: ENGINES DATABASE ---
+        const enginesData = [
+            { id: '2jz', name: 'Toyota 2JZ-GTE / VVTi', disp: '3.0L Turbo', stockHp: '320 HP', stockLimit: '600 - 650 HP (Stock Block)', timing: '11° - 14° BTDC @ 1.5 Bar', desc: 'أشهر محرك ستاند ألون في العالم، يتحمل عزم هائل على البساتن الأصلية.' },
+            { id: 'rb26', name: 'Nissan RB26DETT', disp: '2.6L Twin Turbo', stockHp: '276 HP', stockLimit: '550 - 600 HP (Stock Block)', timing: '12° - 15° BTDC @ 1.4 Bar', desc: 'أسطورة النيسان سكايلاين، رباعي الكامات مع نظام تبريد وفوهة زيت قوية.' },
+            { id: 'ls3', name: 'GM LS3 V8 Small Block', disp: '6.2L V8 NA / SC', stockHp: '430 HP', stockLimit: '650 - 700 HP (Stock Block)', timing: '15° - 18° BTDC @ Supercharged', desc: 'عزم دوران جبار، استجابة بستم فورجي جاهز للتعديل المفتوح.' },
+            { id: 'ej25', name: 'Subaru EJ257 / STI', disp: '2.5L Boxer Turbo', stockHp: '300 HP', stockLimit: '380 - 420 HP (Stock Block)', timing: '10° - 13° BTDC @ 1.2 Bar', desc: 'محرك بوكسر قوي، يتطلب عناية فائقة بدرجات حرارة الزيت وضغط البوست.' },
+            { id: 'k24', name: 'Honda K24 / K20 Turbo', disp: '2.4L VTEC Turbo', stockHp: '200 HP', stockLimit: '500 - 550 HP (Stock Block)', timing: '13° - 16° BTDC @ 1.4 Bar', desc: 'ملك الهوندا المعتمد في السرعة والتحمل العالي مع كمبيوتر ستاند ألون.' },
+            { id: '4g63', name: 'Mitsubishi 4G63T Evo 8/9', disp: '2.0L Turbo', stockHp: '280 HP', stockLimit: '500 - 580 HP (Stock Block)', timing: '12° - 15° BTDC @ 1.5 Bar', desc: 'بستم حديدي قوي وقدرة جبارة على تحمل الضغط العالي بدون تعديل السلندر.' },
+            { id: 'b58', name: 'BMW B58 Single Turbo', disp: '3.0L Turbo', stockHp: '382 HP', stockLimit: '600 - 650 HP (Stock DME/Unlock)', timing: '14° - 17° BTDC @ 1.8 Bar', desc: 'الجيل الحديث القوي جداً، نظام حقن مباشر ممتاز.' }
+        ];
+
+        function renderEngines(filter = '') {
+            const container = document.getElementById('engines-list');
+            container.innerHTML = '';
+            
+            const filtered = enginesData.filter(e => e.name.toLowerCase().includes(filter.toLowerCase()));
+            
+            filtered.forEach(eng => {
+                container.innerHTML += `
+                    <div class="ios-glass-sub p-4 rounded-xl space-y-2 border border-gray-800">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-sm text-white">${eng.name}</h3>
+                                <span class="text-[11px] text-iosBlue font-mono-num">${eng.disp} • Stock: ${eng.stockHp}</span>
+                            </div>
+                            <span class="text-[10px] bg-black/40 px-2 py-1 rounded-lg text-gray-300 font-mono-num">${eng.stockLimit.split(' ')[0]} HP</span>
+                        </div>
+                        <p class="text-xs text-gray-400">${eng.desc}</p>
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800 text-[11px]">
+                            <div><span class="text-gray-500 block">${translations[currentLang].stock_block}</span> <span class="text-gray-200 font-bold">${eng.stockLimit}</span></div>
+                            <div><span class="text-gray-500 block">${translations[currentLang].timing_recom}</span> <span class="text-iosGreen font-bold">${eng.timing}</span></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterEngines(val) {
+            renderEngines(val);
+        }
+
+        // --- SECTION 3: CALCULATOR LOGIC ---
+        let currentBoostBar = 1.5;
+        let drivetrainLoss = 15; // RWD 15%
+
+        const tuningParts = [
+            { id: 'turbo', name: 'توربو أكبر / كاستم (Big Turbo Upgrade)', hpAdd: 180 },
+            { id: 'injectors', name: 'بخاخات عالية التدفق 1000cc+ & طرمبة بنزين', hpAdd: 50 },
+            { id: 'intercooler', name: 'إنتركولر كبير + أنابيب ضغط ألومنيوم', hpAdd: 35 },
+            { id: 'cams', name: 'كام شافت رياضي (Sport Camshafts)', hpAdd: 40 },
+            { id: 'exhaust', name: 'نظام إكزوست كامل كاستم 3 بوصة', hpAdd: 30 },
+            { id: 'manifold', name: 'ثلاجة محرك رياضية + ثروتل كبير', hpAdd: 25 },
+            { id: 'e85', name: 'وقود إيثانول E85 مع حساس Flex Fuel', hpAdd: 70 },
+            { id: 'ecu', name: 'كمبيوتر ستاند ألون (Standalone ECU Tune)', hpAdd: 60 }
+        ];
+
+        function renderParts() {
+            const container = document.getElementById('parts-container');
+            container.innerHTML = '';
+            tuningParts.forEach((part, idx) => {
+                container.innerHTML += `
+                    <label class="ios-glass-sub p-2.5 rounded-xl flex items-center space-x-2 space-x-reverse cursor-pointer hover:bg-gray-800/50 transition">
+                        <input type="checkbox" id="part-${idx}" value="${part.hpAdd}" onchange="calculateHp()" class="w-4 h-4 rounded accent-iosBlue">
+                        <span class="text-xs text-gray-200">${part.name}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function updateBoostFromSlider(val) {
+            currentBoostBar = (val / 10).toFixed(1);
+            document.getElementById('boost-num-input').value = currentBoostBar;
+            document.getElementById('boost-unit-label').innerText = `Bar (~${(currentBoostBar * 14.5038).toFixed(1)} PSI)`;
+            calculateHp();
+        }
+
+        function updateBoostFromNum(val) {
+            let num = parseFloat(val);
+            if (isNaN(num)) num = 0;
+            if (num > 3.5) num = 3.5;
+            currentBoostBar = num;
+            document.getElementById('boost-slider').value = Math.round(num * 10);
+            document.getElementById('boost-unit-label').innerText = `Bar (~${(num * 14.5038).toFixed(1)} PSI)`;
+            calculateHp();
+        }
+
+        function setDrivetrain(type, loss) {
+            drivetrainLoss = loss;
+            document.querySelectorAll('.dt-btn').forEach(btn => {
+                if(btn.getAttribute('data-dt') === type) {
+                    btn.className = "dt-btn px-2 py-2 rounded-xl text-xs font-semibold bg-iosBlue text-white transition";
+                } else {
+                    btn.className = "dt-btn px-2 py-2 rounded-xl text-xs font-semibold ios-glass-sub text-gray-300 transition";
+                }
+            });
+            calculateHp();
+        }
+
+        function calculateHp() {
+            const engineType = document.getElementById('calc-engine-select').value;
+            let baseCrank = 300;
+            let stockPistonLimit = 600;
+
+            if (engineType === '2jz') { baseCrank = 320; stockPistonLimit = 650; }
+            else if (engineType === 'rb26') { baseCrank = 280; stockPistonLimit = 600; }
+            else if (engineType === 'ls3') { baseCrank = 430; stockPistonLimit = 700; }
+            else if (engineType === 'ej25') { baseCrank = 300; stockPistonLimit = 420; }
+            else if (engineType === 'k24') { baseCrank = 210; stockPistonLimit = 500; }
+            else if (engineType === '4g63') { baseCrank = 280; stockPistonLimit = 550; }
+            else if (engineType === 'b58') { baseCrank = 382; stockPistonLimit = 650; }
+
+            // Calculate parts bonus
+            let partsBonus = 0;
+            tuningParts.forEach((part, idx) => {
+                const chk = document.getElementById(`part-${idx}`);
+                if (chk && chk.checked) {
+                    partsBonus += part.hpAdd;
+                }
+            });
+
+            // Realistic Boost multiplier (Volumetric Efficiency & PR)
+            // 1.5 Bar boost adds substantial realistic power mapped properly
+            let boostMultiplier = 1 + (currentBoostBar * 0.42);
+            
+            let totalCrankHp = Math.round((baseCrank + partsBonus) * boostMultiplier);
+            
+            // Apply drivetrain loss for Wheel HP (WHP)
+            let wheelHp = Math.round(totalCrankHp * (1 - (drivetrainLoss / 100)));
+
+            document.getElementById('res-crank-hp').innerText = totalCrankHp + " HP";
+            document.getElementById('res-wheel-hp').innerText = wheelHp + " WHP";
+
+            const alertEl = document.getElementById('engine-safety-alert');
+            if (totalCrankHp > stockPistonLimit) {
+                alertEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation ml-1"></i> ${translations[currentLang].warning_limit}`;
+                alertEl.className = "mt-3 pt-3 border-t border-gray-800 text-center text-xs font-semibold text-iosRed";
+            } else {
+                alertEl.innerHTML = `<i class="fa-solid fa-circle-check ml-1"></i> ${translations[currentLang].safe_limit}`;
+                alertEl.className = "mt-3 pt-3 border-t border-gray-800 text-center text-xs font-semibold text-iosGreen";
+            }
+        }
+
+        // --- SECTION 4: CONVERTER LOGIC ---
+        function convertFrom(unit, val) {
+            let v = parseFloat(val);
+            if (isNaN(v)) {
+                document.getElementById('conv-psi').value = '';
+                document.getElementById('conv-bar').value = '';
+                document.getElementById('conv-kpa').value = '';
+                return;
+            }
+
+            let psi = 0, bar = 0, kpa = 0;
+
+            if (unit === 'psi') {
+                psi = v;
+                bar = v / 14.5038;
+                kpa = v * 6.89476;
+            } else if (unit === 'bar') {
+                bar = v;
+                psi = v * 14.5038;
+                kpa = v * 100;
+            } else if (unit === 'kpa') {
+                kpa = v;
+                bar = v / 100;
+                psi = v / 6.89476;
+            }
+
+            if (unit !== 'psi') document.getElementById('conv-psi').value = psi.toFixed(2);
+            if (unit !== 'bar') document.getElementById('conv-bar').value = bar.toFixed(2);
+            if (unit !== 'kpa') document.getElementById('conv-kpa').value = kpa.toFixed(1);
+        }
+
+        // --- NAVIGATION TABS SWITCHER ---
+        function switchTab(tabId) {
+            const sections = ['afr', 'engines', 'calculator', 'converter'];
+            sections.forEach(s => {
+                const el = document.getElementById(`section-${s}`);
+                if (s === tabId) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.className = "nav-tab flex flex-col items-center justify-center py-1.5 text-gray-400 hover:text-gray-200 transition";
+            });
+
+            const activeBtn = document.getElementById(`nav-btn-${tabId}`);
+            if(activeBtn) {
+                activeBtn.className = "nav-tab flex flex-col items-center justify-center py-1.5 text-iosBlue transition";
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialization on load
+        window.onload = function() {
+            renderEngines();
+            renderParts();
+            calculateHp();
+            updateAfrFromLambda(0.85);
+        };
+    </script>
+</body>
+</html>
